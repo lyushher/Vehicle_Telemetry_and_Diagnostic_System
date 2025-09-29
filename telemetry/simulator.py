@@ -41,13 +41,10 @@ class VehicleSimulator:
             self.rpm = max(self.rpm - 150 * dt, 700)
             self.speed = max(self.speed - 1.2 * dt, 0.0)
 
-        # Motor sıcaklığı (basit ısınma/soğuma)
         self.temp = max(20.0, min(self.temp + (self.rpm - 800) / 8000 * 5.0 * dt, 120.0))
 
-        # Yakıt tüketimi kabaca rpm’e bağlı
         self.fuel = max(0.0, self.fuel - (self.rpm / 8000.0) * 0.05 * dt)
 
-        # Alternatör voltajı: rölantide düşük, rpm yükseldikçe nominal
         self.voltage = 12.5 if self.rpm < 1000 else 13.8
 
     def get_state(self):
