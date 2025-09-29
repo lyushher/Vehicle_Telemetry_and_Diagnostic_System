@@ -1,27 +1,15 @@
-"""
-Vehicle Telemetry & Diagnostic System — Premium main (v1.1, repo‑compatible)
-
-Goal: Upgrade to a premium, smoother experience **without breaking your repo's current flow**.
-- Preserves: `python main.py` entry, Tkinter GUI, Matplotlib graphs, background thread, periodic CSV logging to `logs/telemetry_log.csv` (default ~2s like README), and compatibility with your existing `telemetry_logger.py` and `telemetry/sensors.py` if present.
-- Adds: 60 Hz physics with command queue, press‑and‑hold gas/brake + arrow‑key control, engine toggle, autoscaling plots, graceful fallback if optional modules are missing.
-
-Notes:
-- If `telemetry_logger.TelemetryLogger` exists, we use it. Otherwise we write the same CSV schema ourselves to `logs/telemetry_log.csv`.
-- If `telemetry.sensors` exists, we also sample extra sensors (coolant/fuel/voltage) from there; else we synthesize.
-- Logging interval defaults to 2.0s to match README; change `LOG_INTERVAL_S` if needed.
-"""
 from __future__ import annotations
 
 import csv
+import time
 import math
 import os
 import queue
 import threading
-import time
-from collections import deque
-from dataclasses import dataclass, field
-from datetime import datetime
 from typing import Deque, Dict, Optional, Tuple
+from collections import deque
+from datetime import datetime
+from dataclasses import dataclass, field
 
 import tkinter as tk
 from tkinter import ttk, messagebox
@@ -53,8 +41,7 @@ os.makedirs(LOG_DIR, exist_ok=True)
 LOG_PATH = os.path.join(LOG_DIR, "telemetry_log.csv")
 LOG_INTERVAL_S = 2.0  # keep parity with README
 
-# Domain Model
-
+# domain model
 @dataclass
 class VehicleState:
     t: float = 0.0           # seconds since start
@@ -70,9 +57,6 @@ class VehicleState:
 
 
 class VehicleModel:
-    """Simple longitudinal dynamics + engine model (tuned for smooth UX).
-    Keeps your previous observable signals (speed/RPM) but feels more realistic.
-    """
     def __init__(self) -> None:
         self.state = VehicleState()
         # Tunables
@@ -205,38 +189,38 @@ class Simulator(threading.Thread):
 class App(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
-        self.title("Vehicle Telemetry & Diagnostic System — Premium v1.1")
+        self.title("Vehicle Telemetry & Diagnostic System")
         self.geometry("1060x720")
         self.minsize(960, 640)
 
-        # queues for thread comms
+# queues for thread comms
         self.state_q: queue.Queue[VehicleState] = queue.Queue(maxsize=5)
         self.cmd_q: queue.Queue[Tuple[str, object]] = queue.Queue()
 
-        # core
+# core
         self.model = VehicleModel()
         self.sim = Simulator(self.model, self.state_q, self.cmd_q)
         self.sim.start()
 
-        # logging
+# logging
         self._csv_writer = None
         self._csv_fp = None
         self._last_log_t = 0.0
         self._telemetry_logger = TelemetryLogger(LOG_PATH) if TelemetryLogger else None
 
-        # build UI
+# build UI
         self._build_controls()
         self._build_gauges()
         self._build_plot()
         self._bind_keys()
 
-        # plot buffers
+# plot buffers
         self.buf_len = 600  # ~10s at 60 Hz / sampled ~10 Hz
         self.t_buf: Deque[float] = deque(maxlen=self.buf_len)
         self.speed_buf: Deque[float] = deque(maxlen=self.buf_len)
         self.rpm_buf: Deque[float] = deque(maxlen=self.buf_len)
 
-        # UI update loop
+# UI update loop
         self.sample_interval_ms = 100  # 10 Hz UI refresh
         self.after(self.sample_interval_ms, self._on_timer)
 
@@ -246,19 +230,19 @@ class App(tk.Tk):
         frm = ttk.Frame(self)
         frm.pack(side=tk.TOP, fill=tk.X, padx=12, pady=8)
 
-        #engine toggle
+#engine toggle
         self.engine_btn = ttk.Checkbutton(frm, text="Engine ON", command=self._toggle_engine)
         self.engine_btn.state(["!alternate"])  # no tristate
         self.engine_btn.state(["selected"])  # default on
         self.engine_btn.pack(side=tk.LEFT, padx=(0, 12))
 
-        # gear selector
+# gear selector
         ttk.Label(frm, text="Gear:").pack(side=tk.LEFT)
         self.gear_var = tk.IntVar(value=1)
         gear_spin = ttk.Spinbox(frm, from_=1, to=6, width=3, textvariable=self.gear_var, command=self._set_gear)
         gear_spin.pack(side=tk.LEFT, padx=(4, 16))
 
-        # gas and brake
+# gas and brake
         self.gas_btn = ttk.Button(frm, text="Gas (Hold)")
         self.gas_btn.bind("<ButtonPress-1>", lambda e: self._set_throttle(1.0))
         self.gas_btn.bind("<ButtonRelease-1>", lambda e: self._set_throttle(0.0))
@@ -269,7 +253,7 @@ class App(tk.Tk):
         self.brake_btn.bind("<ButtonRelease-1>", lambda e: self._set_brake(0.0))
         self.brake_btn.pack(side=tk.LEFT, padx=6)
 
-        # Reset
+# Reset
         ttk.Button(frm, text="Reset", command=self._reset).pack(side=tk.LEFT, padx=(16, 0))
 
     def _build_gauges(self) -> None:
@@ -347,7 +331,7 @@ class App(tk.Tk):
         self.t_buf.clear(); self.speed_buf.clear(); self.rpm_buf.clear()
         self._redraw()
 
-    # ---------- Logging ----------
+
     def _ensure_csv(self) -> None:
         if self._csv_writer or self._telemetry_logger:
             return
@@ -385,7 +369,6 @@ class App(tk.Tk):
             if self._csv_fp:
                 self._csv_fp.flush()
 
-    # ---------- Update loop ----------
     def _on_timer(self) -> None:
         latest: Optional[VehicleState] = None
         try:
@@ -402,12 +385,12 @@ class App(tk.Tk):
             self.fuel_lbl.configure(text=f"Fuel: {latest.fuel_level_pct:.1f} %")
             self.batt_lbl.configure(text=f"Battery: {latest.battery_v:.2f} V")
 
-            # Append to buffers
+            # append to buffers
             self.t_buf.append(latest.t)
             self.speed_buf.append(latest.speed_kph)
             self.rpm_buf.append(latest.rpm / 100.0)
 
-            # Periodic logging (default 2s)
+            # periodic logging (default 2s)
             self._log_if_due(latest)
 
             self._redraw()
@@ -427,7 +410,6 @@ class App(tk.Tk):
                 self.ax.set_ylim(max(0.0, ymin - pad), ymax + pad)
         self.canvas.draw_idle()
 
-    # ---------- Lifecycle ----------
     def _on_close(self) -> None:
         try:
             self.sim.stop()
