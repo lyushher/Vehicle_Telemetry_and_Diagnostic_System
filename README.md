@@ -1,17 +1,15 @@
-# 🚗 Vehicle Telemetry and Diagnostic System
 
-### 🛠️ Real-Time Vehicle Telemetry & Diagnostics Simulator
-
+# Real-Time Vehicle Telemetry and Diagnostic System
 
 A Python-based system that simulates core functionalities of an Electronic Control Unit (ECU) used in modern vehicles.  
 This project provides a real-time visual and interactive environment to observe how engine data behaves during acceleration and braking events.
 
-- 🖥️ **Tkinter** GUI replicates a simple dashboard interface  
-- 📊 **Matplotlib** graphs display live RPM and speed updates  
-- ⚙️ **Multithreaded engine** ensures smooth sensor simulation  
-- 📁 Periodic logging of **engine temperature, fuel level**, and **battery voltage** to `CSV`
+-  **Tkinter** GUI replicates a simple dashboard interface  
+-  **Matplotlib** graphs display live RPM and speed updates  
+-  **Multithreaded engine** keeps the UI responsive while physics ticks at 60 Hz.
+- **Periodic CSV logging** of coolant temperature, fuel level, and battery voltage
 
-> Ideal for educational use, early-stage automotive prototyping, and testing embedded logic before deployment.
+> Ideal for educational use, experimentation, and testing embedded logic before working with real hardware.
 
 
 ---
@@ -30,11 +28,11 @@ This project provides a real-time visual and interactive environment to observe 
 
 ## ✨ Features
 
-- Real-time RPM and speed simulation with graphical display
-- Gas and brake control buttons with acceleration physics
-- Threaded background data updates to keep GUI responsive
-- Periodic logging of vehicle data: RPM, speed, temperature, fuel, voltage
-- Dark mode UI with dual matplotlib plots for live visualization
+- **Threaded 60 Hz simulator** with simple longitudinal physics (throttle, brake, drag, gears).
+- **Tkinter UI** with press-and-hold **Gas/Brake**, engine toggle, gear control.
+- **Live Matplotlib plot** of **Speed** and **RPM/100** with autoscaling.
+- **CSV logging** every **2 seconds** to `logs/telemetry_log.csv`.
+- **Resilient design**: optional sensors/logger modules auto-fallback so the app still runs.
 
 ---
 
